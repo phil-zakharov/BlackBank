@@ -1,4 +1,3 @@
-import { useDispatch } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import Dialog from '@mui/material/Dialog';
@@ -10,57 +9,44 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../api/authApi';
-import { setAuth } from '../model/authSlice';
-import { loginSchema } from '../model/validation';
-import type { AppDispatch } from '../../../app/store';
-import type { LoginRequest } from '../model/types';
+import { registerSchema } from '../model/validation';
+import type { RegisterRequest } from '../model/types';
 
-interface LoginDialogProps {
+interface RegisterDialogProps {
   open: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function LoginDialog({ open, onClose }: LoginDialogProps) {
-  const dispatch = useDispatch<AppDispatch>();
+export function RegisterDialog({ open, onClose, onSuccess }: RegisterDialogProps) {
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<LoginRequest>({
-    resolver: yupResolver(loginSchema),
+  } = useForm<RegisterRequest>({
+    resolver: yupResolver(registerSchema),
   });
 
-  const loginMutation = useMutation({
-    mutationFn: authApi.login,
-    onSuccess: async (data) => {
-      // После успешного логина получаем данные пользователя
-      try {
-        const user = await authApi.fetchMe();
-        dispatch(setAuth({ user, accessToken: data.accessToken }));
-        reset();
-        onClose();
-      } catch (error) {
-        // Если не удалось получить пользователя, всё равно сохраняем токен
-        // и пытаемся получить пользователя позже
-        dispatch(setAuth({ 
-          user: { id: '', email: '', fullName: '' }, 
-          accessToken: data.accessToken 
-        }));
-        reset();
-        onClose();
+  const registerMutation = useMutation({
+    mutationFn: authApi.register,
+    onSuccess: () => {
+      reset();
+      onClose();
+      if (onSuccess) {
+        onSuccess();
       }
     },
   });
 
-  const onSubmit = (data: LoginRequest) => {
-    loginMutation.mutate(data);
+  const onSubmit = (data: RegisterRequest) => {
+    registerMutation.mutate(data);
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <DialogTitle>Вход</DialogTitle>
+        <DialogTitle>Регистрация</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
           <TextField
             label="Email"
@@ -77,14 +63,22 @@ export function LoginDialog({ open, onClose }: LoginDialogProps) {
             {...register('password')}
             error={!!errors.password}
             helperText={errors.password?.message}
-            autoComplete="current-password"
+            autoComplete="new-password"
             fullWidth
           />
-          {loginMutation.isError && (
+          <TextField
+            label="Полное имя"
+            {...register('fullName')}
+            error={!!errors.fullName}
+            helperText={errors.fullName?.message}
+            autoComplete="name"
+            fullWidth
+          />
+          {registerMutation.isError && (
             <Typography color="error" variant="body2">
-              {loginMutation.error instanceof Error 
-                ? loginMutation.error.message 
-                : 'Ошибка входа'}
+              {registerMutation.error instanceof Error 
+                ? registerMutation.error.message 
+                : 'Ошибка регистрации'}
             </Typography>
           )}
         </DialogContent>
@@ -93,9 +87,9 @@ export function LoginDialog({ open, onClose }: LoginDialogProps) {
           <Button 
             type="submit" 
             variant="contained" 
-            disabled={isSubmitting || loginMutation.isPending}
+            disabled={isSubmitting || registerMutation.isPending}
           >
-            Войти
+            Зарегистрироваться
           </Button>
         </DialogActions>
       </form>

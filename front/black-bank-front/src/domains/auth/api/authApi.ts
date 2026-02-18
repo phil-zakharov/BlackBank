@@ -1,34 +1,39 @@
 import { rawRequest, request } from '../../../shared/api/httpClient';
 import type {
+  RegisterRequest,
+  RegisterResponse,
   LoginRequest,
   LoginResponse,
+  RefreshRequest,
   RefreshResponse,
   MeResponse,
 } from '../model/types';
 
-const AUTH_BASE = '/api/auth';
+const AUTH_BASE = '/auth';
+const USERS_BASE = '/users';
+
+export async function register(data: RegisterRequest): Promise<RegisterResponse> {
+  return rawRequest<RegisterResponse>({
+    url: `${AUTH_BASE}/register`,
+    method: 'POST',
+    body: data,
+  });
+}
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
-  const res = await rawRequest<LoginResponse>({
+  return rawRequest<LoginResponse>({
     url: `${AUTH_BASE}/login`,
     method: 'POST',
     body: data,
   });
-  if (res) return res;
-  // Mock response for development without backend
-  return {
-    user: { id: '1', email: data.email, name: 'User' },
-    accessToken: 'mock-access-token',
-  };
 }
 
-export async function refresh(): Promise<RefreshResponse> {
-  const res = await rawRequest<RefreshResponse>({
+export async function refresh(data?: RefreshRequest): Promise<RefreshResponse> {
+  return rawRequest<RefreshResponse>({
     url: `${AUTH_BASE}/refresh`,
     method: 'POST',
+    body: data || {},
   });
-  if (res) return res;
-  throw new Error('Refresh failed');
 }
 
 export async function logout(): Promise<void> {
@@ -39,15 +44,14 @@ export async function logout(): Promise<void> {
 }
 
 export async function fetchMe(): Promise<MeResponse> {
-  const res = await request<MeResponse>(
-    { url: `${AUTH_BASE}/me`, method: 'GET' },
+  return request<MeResponse>(
+    { url: `${USERS_BASE}/me`, method: 'GET' },
     { requiresAuth: true }
   );
-  if (res) return res;
-  throw new Error('Failed to fetch user');
 }
 
 export const authApi = {
+  register,
   login,
   refresh,
   logout,

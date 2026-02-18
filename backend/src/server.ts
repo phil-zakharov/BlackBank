@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import jwt from "@fastify/jwt";
+import cookie from "@fastify/cookie";
 import { registerAuthRoutes } from "./modules/auth/routes";
 import { registerUserRoutes } from "./modules/users/routes";
 import { registerAccountRoutes } from "./modules/accounts/routes";
@@ -35,6 +36,10 @@ export function buildApp(): FastifyInstance {
 
   app.register(swaggerUi, {
     routePrefix: "/docs",
+  });
+
+  app.register(cookie, {
+    hook: "onRequest",
   });
 
   const jwtSecret = process.env.JWT_SECRET;

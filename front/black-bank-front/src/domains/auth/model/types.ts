@@ -1,7 +1,19 @@
 export interface AuthUser {
   id: string;
   email: string;
-  name?: string;
+  fullName: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  fullName: string;
+}
+
+export interface RegisterResponse {
+  id: string;
+  email: string;
+  fullName: string;
 }
 
 export interface LoginRequest {
@@ -10,13 +22,21 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  user: AuthUser;
   accessToken: string;
+  refreshToken: string;
+}
+
+export interface RefreshRequest {
+  refreshToken?: string;
 }
 
 export interface RefreshResponse {
   accessToken: string;
-  user?: AuthUser;
+  refreshToken?: string;
 }
 
-export type MeResponse = AuthUser;
+export interface MeResponse {
+  id: string;
+  email: string;
+  fullName: string;
+}

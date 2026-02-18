@@ -14,10 +14,6 @@ const loginBodySchema = z.object({
   password: z.string().min(6),
 });
 
-const refreshBodySchema = z.object({
-  refreshToken: z.string().min(1),
-});
-
 export async function registerAuthRoutes(
   app: FastifyInstance,
   _opts: FastifyPluginOptions,
@@ -97,7 +93,6 @@ export async function registerAuthRoutes(
           type: "object",
           properties: {
             accessToken: { type: "string" },
-            refreshToken: { type: "string" },
           },
         },
         400: {
@@ -148,19 +143,22 @@ export async function registerAuthRoutes(
       },
     });
 
-    return reply.send({ accessToken, refreshToken });
+    const isProd = process.env.NODE_ENV === "production";
+
+    reply.setCookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "lax",
+      path: "/auth/refresh",
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
+    return reply.send({ accessToken });
   });
 
   app.post("/refresh", {
     schema: {
       tags: ["Auth"],
-      body: {
-        type: "object",
-        properties: {
-          refreshToken: { type: "string" },
-        },
-        required: ["refreshToken"],
-      },
       response: {
         200: {
           type: "object",
@@ -183,11 +181,10 @@ export async function registerAuthRoutes(
       },
     },
   }, async (request, reply) => {
-    const parsed = refreshBodySchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.code(400).send({ error: "Invalid body" });
+    const { refreshToken } = (request.cookies as any) ?? {};
+    if (!refreshToken || typeof refreshToken !== "string") {
+      return reply.code(401).send({ error: "Refresh token missing" });
     }
-    const { refreshToken } = parsed.data;
 
     try {
       const decoded = app.jwt.verify(refreshToken) as { sub: string; type?: string };
@@ -199,6 +196,7 @@ export async function registerAuthRoutes(
         where: { token: refreshToken },
       });
       if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
+        reply.clearCookie("refreshToken", { path: "/auth/refresh" });
         return reply.code(401).send({ error: "Refresh token invalid" });
       }
 
@@ -209,6 +207,7 @@ export async function registerAuthRoutes(
 
       return reply.send({ accessToken });
     } catch {
+      reply.clearCookie("refreshToken", { path: "/auth/refresh" });
       return reply.code(401).send({ error: "Invalid token" });
     }
   });

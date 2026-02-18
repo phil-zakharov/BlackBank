@@ -49,7 +49,7 @@ export function AuthButton() {
           open={Boolean(anchorEl)}
           onClose={handleCloseMenu}
         >
-          <MenuItem disabled>{user.email}</MenuItem>
+          <MenuItem disabled>{user.fullName || user.email}</MenuItem>
           <MenuItem onClick={handleLogout}>Выйти</MenuItem>
         </Menu>
       </>

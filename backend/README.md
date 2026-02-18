@@ -26,9 +26,57 @@ cp .env.example .env
 - `JWT_SECRET=supersecret_jwt_key_change_me` (в проде обязательно заменить)
 - `DATABASE_URL=postgresql://postgres:postgres@localhost:5433/blackbank`
 
-### Локальный запуск через Docker
+### Режим разработки (с hot-reload)
 
-Из каталога `backend`:
+#### Вариант 1: Локальный запуск (рекомендуется для разработки)
+
+1. Убедитесь, что база данных запущена:
+
+```bash
+docker-compose up -d db
+```
+
+2. Установите зависимости (если ещё не установлены):
+
+```bash
+npm install
+```
+
+3. Сгенерируйте Prisma Client:
+
+```bash
+npm run prisma:generate
+```
+
+4. Запустите сервер в режиме разработки:
+
+```bash
+npm run dev
+```
+
+Сервер запустится на `http://localhost:3000` с автоматической перезагрузкой при изменении файлов.
+
+#### Вариант 2: Docker Compose в режиме разработки
+
+Если предпочитаете запускать всё в Docker:
+
+```bash
+docker-compose --profile dev up
+```
+
+Это поднимет:
+- **db**: PostgreSQL на порту `5433`
+- **api-dev**: Fastify API с hot-reload на порту `3000` (изменения в коде применяются автоматически)
+
+Остановка:
+
+```bash
+docker-compose --profile dev down
+```
+
+### Продакшн-режим (Docker)
+
+Для запуска собранного приложения:
 
 ```bash
 docker-compose up -d
@@ -37,7 +85,7 @@ docker-compose up -d
 Это поднимет:
 
 - **db**: PostgreSQL `blackbank-db` на порту `5433`.
-- **api**: Fastify API `blackbank-api` на порту `3000`.
+- **api**: Fastify API `blackbank-api` на порту `3000` (собранный production build).
 
 Проверка:
 

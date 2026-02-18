@@ -4,6 +4,7 @@ import { authApi } from '../domains/auth/api/authApi';
 import { setAuth, clearAuth } from '../domains/auth/model/authSlice';
 
 configureHttpClient({
+  baseURL: '/api',
   getAccessToken: () => store.getState().auth.accessToken,
   on401: async () => {
     try {
